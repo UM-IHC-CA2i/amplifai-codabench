@@ -58,7 +58,7 @@ your_submission.zip
 
 ### 3. Submit
 
-Upload your zip on the [AMPLIFAI Codabench page](#).
+Upload your zip on the [AMPLIFAI Codabench page](https://www.codabench.org/competitions/14290/).
 
 See [`SUBMISSION_GUIDE.md`](SUBMISSION_GUIDE.md) for full details on the submission format, Docker environment, and path conventions.
 
