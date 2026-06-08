@@ -58,7 +58,7 @@ Every case in `sample_cases.csv` must have a prediction. Submissions with fewer 
 your_submission.zip
 ├── run.py          ← required entry point (must be named run.py)
 ├── metadata        ← required (tells the system how to call your code)
-└── ...             ← model weights, helper scripts, etc.
+└── ...             ← model weights, helper scripts, bundled packages
 ```
 
 **`metadata` file contents** (include this exactly):
@@ -72,14 +72,47 @@ command: python3 /app/ingested_program/run.py $input $output
 
 **Image:** `codalab/codalab-legacy:gpu310`  
 **Python:** 3.10  
-**CUDA:** 12.4.1 (GPU available when drivers are enabled)
+**GPU:** NVIDIA RTX 4090 (24 GB VRAM), CUDA 12.x available  
+**Network:** **Disabled** — no outbound internet access inside the container
 
-Install any additional packages at the top of `run.py`:
-```python
-import subprocess, sys
-subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
-                       "nibabel", "SimpleITK", "your-package"])
+### Bundling your dependencies
+
+Because network access is disabled, `pip install` will not work at runtime. You must include all required packages in your submission zip.
+
+**Option A — bundle with pip:**
+
+```bash
+# From your local environment (Python 3.10):
+pip install nibabel pandas numpy torch --target ./packages
+zip -r submission.zip run.py metadata packages/
 ```
+
+Then at the top of `run.py`:
+
+```python
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "packages"))
+```
+
+**Option B — wheel files:**
+
+Download wheels for your target platform (`linux_x86_64`, Python 3.10, CUDA) and include them in the zip. Install them from a local path:
+
+```python
+import subprocess, sys, os
+pkg_dir = os.path.join(os.path.dirname(__file__), "wheels")
+subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-index",
+                       "--find-links", pkg_dir, "nibabel", "torch"])
+```
+
+**Packages already in the base image** (no bundling needed):
+
+| Package | Version |
+|---|---|
+| Python | 3.10 |
+| pip | latest |
+
+We recommend testing your bundled submission locally before uploading.
 
 ---
 
@@ -87,9 +120,9 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
 
 ```python
 # run.py
-import os, sys, subprocess
-subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
-                       "nibabel", "pandas", "numpy"])
+import sys, os
+# If you bundled packages:
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "packages"))
 
 import nibabel as nib
 import pandas as pd
@@ -97,9 +130,9 @@ import pandas as pd
 input_dir, output_dir = sys.argv[1], sys.argv[2]
 os.makedirs(output_dir, exist_ok=True)
 
-cases    = pd.read_csv("/app/input_data/sample_cases.csv")
+cases     = pd.read_csv("/app/input_data/sample_cases.csv")
 DATA_ROOT = "/app/data/cases"
-results  = []
+results   = []
 
 for case_id in cases["case_id"]:
     # Load CT phases
@@ -122,6 +155,8 @@ pd.DataFrame(results).to_csv(
 )
 ```
 
+See [`example_submission/run.py`](example_submission/run.py) for a complete template.
+
 ---
 
 ## Evaluation metric
@@ -133,6 +168,10 @@ Final Score = 0.85 × Adjusted QWK + 0.15 × Special Category Recognition
 - **Adjusted QWK** — Quadratic Weighted Kappa on LR-1 through LR-5 cases
 - **Special Category Recognition** — 3-class balanced accuracy (Ordinal / LR-M / LR-TIV)
 
-The full scoring implementation is available in `evaluate.py`.
+The full scoring implementation is available in [`evaluate.py`](evaluate.py). Run it locally to check your predictions before submitting:
+
+```bash
+python evaluate.py --ground_truth path/to/gt.csv --predictions path/to/pred.csv --no-bootstrap
+```
 
 ---
