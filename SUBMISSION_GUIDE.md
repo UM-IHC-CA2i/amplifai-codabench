@@ -87,6 +87,7 @@ command: python3 /app/ingested_program/run.py $input $output
 **Image:** `codalab/codalab-legacy:gpu310`  
 **Python:** 3.10  
 **GPU:** NVIDIA RTX 4090 (24 GB VRAM), CUDA 12.x available  
+**CPU:** AMD Ryzen 9 7950X, 32 threads (16 cores) — no CPU limit is set on submission containers, and only one submission runs at a time, so your code has exclusive, unrestricted use of all 32 threads while it's running  
 **Network:** **Disabled** — no outbound internet access inside the container
 
 ### Bundling your dependencies
