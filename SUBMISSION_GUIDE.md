@@ -119,14 +119,57 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-index",
                        "--find-links", pkg_dir, "nibabel", "torch"])
 ```
 
-**Packages already in the base image** (no bundling needed):
+**Packages already in the base image** (do not bundle your own copies of these — see the ABI warning below):
 
 | Package | Version |
 |---|---|
-| Python | 3.10 |
-| pip | latest |
+| Python | 3.10.14 |
+| pip | 24.1.1 |
+| numpy | 1.26.4 |
+| pandas | 2.2.2 |
+| scipy | 1.14.0 |
+| scikit-learn | 1.5.0 |
+| torch | 2.3.1+cu121 (CUDA 12.4.1) |
 
-We recommend testing your bundled submission locally before uploading.
+**Not present** — bundle these yourself if your code needs them: `nibabel`, `opencv-python`, `SimpleITK`, and anything else not listed above.
+
+### ⚠️ Compiled-package / NumPy ABI compatibility
+
+If you bundle *any* package with compiled C/C++ extensions (`numpy`, `scipy`, `scikit-learn`, `torch`, `pyradiomics`, `opencv`, `SimpleITK`, etc.), it must be built against the same major NumPy version that actually gets imported at runtime. `sys.path.insert(0, "packages/")` puts your bundled packages *ahead* of the image's own — so if your bundle's compiled extension expects a different NumPy major version than the one that ends up loaded, you'll hit errors like:
+
+```
+AttributeError: _ARRAY_API not found
+ImportError: numpy.core.multiarray failed to import
+```
+
+Safest options, in order of preference:
+- Don't bundle `numpy`/`pandas`/`scipy`/`scikit-learn`/`torch` at all — the versions already in the image (table above) are mutually compatible.
+- If you must bundle a compiled package on top of the base image's NumPy (e.g. `pyradiomics`, `opencv`, `SimpleITK`), make sure it was built/downloaded for **NumPy 1.26**, not whatever version your local dev environment defaults to (many local setups today default to NumPy 2.x).
+
+### Test your submission locally before uploading
+
+Network is disabled in the real environment, so the only reliable check is running your exact zip inside the same image, offline, before you submit:
+
+```bash
+mkdir -p /tmp/test_input /tmp/test_output
+echo "case_id" > /tmp/test_input/sample_cases.csv
+echo "CASE00001" >> /tmp/test_input/sample_cases.csv   # use a real case_id you have data access to
+
+unzip -o submission.zip -d /tmp/test_submission
+
+docker run --rm --network none \
+  --gpus all \
+  -v /tmp/test_submission:/app/ingested_program:ro \
+  -v /path/to/data:/app/data:ro \
+  -v /tmp/test_input:/app/input_data:ro \
+  -v /tmp/test_output:/app/output \
+  codalab/codalab-legacy:gpu310 \
+  python3 /app/ingested_program/run.py /app/input_data /app/output
+
+cat /tmp/test_output/predictions.csv
+```
+
+If this doesn't produce a valid `predictions.csv` locally with `--network none`, it won't on the real server either — this catches missing-dependency and ABI-mismatch bugs (like the NumPy issue above) before you ever use a submission slot.
 
 ---
 
