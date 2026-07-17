@@ -16,6 +16,20 @@ When submitted, it runs inside a Docker container on the challenge server, proce
 | `/app/input_data/sample_cases.csv` | List of case IDs to process |
 | `/app/output/` | **Write your `predictions.csv` here** |
 
+`sample_cases.csv` is a single column, one case ID per row:
+
+```csv
+case_id
+CASE00017
+CASE00043
+CASE00044
+CASE00065
+CASE00066
+...
+```
+
+Don't assume a specific ID format or count — just read the `case_id` column and iterate. The exact case list depends on which phase you're submitting to.
+
 ### Per-case data structure
 
 ```
