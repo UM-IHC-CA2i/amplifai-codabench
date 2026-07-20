@@ -9,11 +9,12 @@ stay the same.
 
 import os
 import sys
-import subprocess
 
-# Install your dependencies here
-subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
-                       "nibabel", "pandas", "numpy"])
+# Network is disabled during ingestion, so dependencies must be bundled rather
+# than pip-installed at runtime. pandas/numpy already ship in the base image;
+# only nibabel needs bundling here (see packages/, built with:
+#   pip install --target=packages --no-deps nibabel packaging importlib-resources typing-extensions
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "packages"))
 
 import nibabel as nib
 import numpy as np
