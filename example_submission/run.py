@@ -5,15 +5,16 @@ AMPLIFAI Challenge — example submission.
 This is a minimal working template. Replace the predict() function with
 your own model inference. Everything else (file paths, output format) must
 stay the same.
+
+Before zipping, run ./build.sh once to generate packages/ (network is disabled
+during ingestion, so nibabel must be bundled rather than pip-installed at
+runtime — pandas/numpy already ship in the base image). packages/ is
+gitignored; it's a local build step, not something to commit.
 """
 
 import os
 import sys
 
-# Network is disabled during ingestion, so dependencies must be bundled rather
-# than pip-installed at runtime. pandas/numpy already ship in the base image;
-# only nibabel needs bundling here (see packages/, built with:
-#   pip install --target=packages --no-deps nibabel packaging importlib-resources typing-extensions
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "packages"))
 
 import nibabel as nib

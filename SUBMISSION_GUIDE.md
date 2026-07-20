@@ -213,7 +213,7 @@ pd.DataFrame(results).to_csv(
 )
 ```
 
-See [`example_submission/run.py`](example_submission/run.py) for a complete template.
+See [`example_submission/run.py`](example_submission/run.py) for a complete template. Run [`example_submission/build.sh`](example_submission/build.sh) once to generate its bundled `packages/` before zipping — it's gitignored, not checked in, so this step is required after cloning.
 
 ---
 
